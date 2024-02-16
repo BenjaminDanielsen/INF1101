@@ -183,15 +183,8 @@ set_t *set_union(set_t *a, set_t *b) {
  */
 set_t *set_intersection(set_t *a, set_t *b) {
     set_t *intersectionset = set_create(a->cmp);
-    if (set_size(a) >= set_size(b)) {
-        SetNode *current = a->root;
-        traverse_intersect(intersectionset, b, current);
-    }
-    // Trengs vel ikke
-    else if (set_size(a) < set_size(b)) {
-        SetNode *current = b->root;
-        traverse_intersect(intersectionset, a, current);
-    }
+    SetNode *current = a->root;
+    traverse_intersect(intersectionset, b, current);
     return intersectionset;
 }
 
