@@ -68,7 +68,7 @@ static void traverse_intersect(set_t *intersectionset, set_t *set, SetNode *node
 
 static void traverse_difference(set_t *differenceset, set_t *set, SetNode *node) {
     if (node) {
-        if (set_contains(set, node->data)) {
+        if (!set_contains(set, node->data)) {
             set_add(differenceset, node->data);
         }
         traverse_difference(differenceset, set, node->left);
@@ -100,11 +100,13 @@ void set_destroy(set_t *set) {
 // Insert an element into the set sorted
 void set_add(set_t *set, void *data) {
     if (set == NULL) {
-        ERROR_PRINT("An error occured");}
+        ERROR_PRINT("An error occured");
+        return;}
 
     SetNode *tmp = setnode_create(data);
     if (tmp == NULL) {
-        ERROR_PRINT("An error occured");}
+        ERROR_PRINT("An error occured");
+        return;}
 
     if (set->root == NULL) {
         set->root = tmp;
@@ -117,25 +119,28 @@ void set_add(set_t *set, void *data) {
 
     while (current != NULL) {
         parent = current;
-        if (set->cmp(current->data, tmp->data) < 0 ) {
+        if (set->cmp(current->data, tmp->data) > 0 ) {
             current = current->right;
         }
-        else if (set->cmp(current->data, tmp->data) > 0) {
+        else if (set->cmp(current->data, tmp->data) < 0) {
             current = current->left;
         }
         else {
             break;
         }
     } 
-    if (set->cmp(parent->data, tmp->data) < 0) {
+    if (set->cmp(parent->data, tmp->data) > 0) {
         parent->right = tmp;
         tmp->parent = parent;
         set->size++;
     } 
-    else if (set->cmp(parent->data, tmp->data) > 0) {
+    else if (set->cmp(parent->data, tmp->data) < 0) {
         parent->left = tmp;
         tmp->parent = parent;
         set->size++;
+    }
+    else {
+        free(tmp);
     }
 }
 
