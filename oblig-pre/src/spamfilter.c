@@ -42,7 +42,7 @@ static set_t *tokenize(char *filename)
 
 /*
  * Prints a set of words.
- */
+
 static void printwords(char *prefix, set_t *words)
 {
     set_iter_t *it;
@@ -56,6 +56,7 @@ static void printwords(char *prefix, set_t *words)
     printf("\n");
     set_destroyiter(it);
 }
+*/
 
 /*
  * Main entry point.

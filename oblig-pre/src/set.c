@@ -58,7 +58,7 @@ static void traverse_union(set_t *unionset, SetNode *node) {
 
 static void traverse_intersect(set_t *intersectionset, set_t *set, SetNode *node) {
     if (node) {
-        if (set_contains(set, node->data) > 0) {
+        if (set_contains(set, node->data)) {
             set_add(intersectionset, node->data);
         }   
         traverse_intersect(intersectionset, set, node->left);
@@ -68,7 +68,7 @@ static void traverse_intersect(set_t *intersectionset, set_t *set, SetNode *node
 
 static void traverse_difference(set_t *differenceset, set_t *set, SetNode *node) {
     if (node) {
-        if (set_contains(set, node->data) < 0) {
+        if (set_contains(set, node->data)) {
             set_add(differenceset, node->data);
         }
         traverse_difference(differenceset, set, node->left);
@@ -161,7 +161,7 @@ int set_contains(set_t *set, void *elem) {
             return 1;
         }
     }
-    return -1;
+    return 0;
 }
 
 /*
