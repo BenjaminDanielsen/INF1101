@@ -24,10 +24,10 @@ struct set_iter {
 
 static SetNode *setnode_create(void *data) {
     SetNode *node = malloc(sizeof(SetNode));
-        node->data = data;
-        node->left = NULL;
-        node->right = NULL;
-        node->parent = NULL;
+    node->data = data;
+    node->left = NULL;
+    node->right = NULL;
+    node->parent = NULL;
     return node;
 }
 
@@ -35,7 +35,7 @@ static void setnode_destroy(SetNode *node) {
     if (node) {
         setnode_destroy(node->left);
         setnode_destroy(node->right);
-        free(node->data);
+        //free(node->data);
         free(node);
     }
 }
@@ -242,8 +242,8 @@ int set_hasnext(set_iter_t *iter) {
         return 0;}
     if (iter->node == NULL) {
         return 0;}
-    if ((!iter->node->left) && (!iter->node->right)) {
-        return 0;} 
+    if (iter->node == iter->set->root) {
+        return 0;}
     return 1;
 }
 
