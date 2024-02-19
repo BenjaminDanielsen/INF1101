@@ -217,7 +217,7 @@ set_t *set_copy(set_t *set) {
 set_iter_t *set_createiter(set_t *set) {
     set_iter_t *it = (set_iter_t *)malloc(sizeof(set_iter_t));
     SetNode *current = set->root;
-    while (current->left) {
+    while (current && current->left) {
         current = current->left;}
     it->node = current;
     it->set = set;
@@ -237,7 +237,7 @@ void set_destroyiter(set_iter_t *iter) {
  */
 int set_hasnext(set_iter_t *iter) {
     SetNode *temp = iter->set->root;
-    while (temp->right) {
+    while (temp && temp->right) {
         temp = temp->right;
     }
     if (iter->node == temp) {
