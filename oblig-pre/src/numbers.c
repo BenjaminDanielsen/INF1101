@@ -1,7 +1,7 @@
 /* Author: Steffen Viken Valvaag <steffenv@cs.uit.no> */
 #include "set.h"
 #include <stdlib.h>
-
+#include <time.h>
 #include "printing.h"
 
 static int compare_ints(void *a, void *b)
@@ -48,6 +48,9 @@ static void dumpset(char *prefix, set_t *set)
 
 int main()
 {
+    struct timespec start_time, end_time;
+    clock_gettime(CLOCK_MONOTONIC, &start_time);
+
     set_t *all, *evens, *odds, *nonprimes, *primes;
     int i, j, n = 50;
     int **numbers;
@@ -133,4 +136,11 @@ int main()
         free(numbers[i]);
     }
     free(numbers);
+
+    clock_gettime(CLOCK_MONOTONIC, &end_time);
+
+    double elapsed_time = (end_time.tv_sec - start_time.tv_sec) +
+                          (end_time.tv_nsec - start_time.tv_nsec) / 1e9;
+
+    printf("Elapsed time: %.9f seconds\n", elapsed_time);
 }
