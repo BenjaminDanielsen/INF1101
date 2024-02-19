@@ -215,14 +215,13 @@ set_t *set_copy(set_t *set) {
  * Creates a new set iterator for iterating over the given set.
  */
 set_iter_t *set_createiter(set_t *set) {
-    if (!set) {
-        return NULL;
-    }
     set_iter_t *it = (set_iter_t *)malloc(sizeof(set_iter_t));
     SetNode *current = set->root;
     while (current && current->left) {
         current = current->left;}
-    it->node = current;
+    SetNode *tmp = setnode_create(NULL);
+    tmp->parent = current;
+    it->node = tmp;
     it->set = set;
     return it;
 }   
@@ -257,6 +256,9 @@ int set_hasnext(set_iter_t *iter) {
  */
 void *set_next(set_iter_t *iter) {
     if (!iter->node) {
+        return NULL;
+    }
+    if (!iter->set->size) {
         return NULL;
     }
     SetNode *current = iter->node;
