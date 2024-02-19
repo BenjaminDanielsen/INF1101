@@ -16,7 +16,7 @@ ASSERT_SRC:=$(patsubst %.c,src/%.c, $(ASSERT_SRC))
 CFLAGS=-Wall -Wextra -g -Wpedantic
 LDFLAGS=-lm -DLOG_LEVEL=0 -DERROR_FATAL
 
-all: spamfilter numbers
+all: spamfilter numbers assert
 
 spamfilter: $(SPAMFILTER_SRC) Makefile
 	gcc -o $@ $(CFLAGS) $(SPAMFILTER_SRC) -I$(INCLUDE) $(LDFLAGS)

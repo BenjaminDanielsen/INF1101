@@ -139,9 +139,6 @@ void set_add(set_t *set, void *data) {
         tmp->parent = parent;
         set->size++;
     }
-    else {
-        free(tmp);
-    }
 }
 
 int set_size(set_t *set) {
@@ -221,7 +218,7 @@ set_iter_t *set_createiter(set_t *set) {
     set_iter_t *it = (set_iter_t *)malloc(sizeof(set_iter_t));
     SetNode *current = set->root;
     while (current) {
-        if (current->left == NULL) {
+        if (!current) {
             break;}
         current = current->left;}
     it->node = current;
@@ -245,7 +242,7 @@ int set_hasnext(set_iter_t *iter) {
         return 0;}
     if (iter->node == NULL) {
         return 0;}
-    if ((iter->node->left == NULL) && (iter->node->right == NULL)) {
+    if ((!iter->node->left) && (!iter->node->right)) {
         return 0;} 
     return 1;
 }
@@ -255,46 +252,26 @@ int set_hasnext(set_iter_t *iter) {
  * set iterator.
  */
 void *set_next(set_iter_t *iter) {
-    if (iter == NULL || iter->node == NULL) {
+    if (!iter->node) {
         return NULL;
     }
-
-    // Stack to keep track of nodes during in-order traversal.
-    SetNode *stack[iter->set->size];
-    int top = -1; // Stack is initially empty.
-
-    // Start from the current node.
     SetNode *current = iter->node;
+    SetNode *next = NULL;
 
-    while (current != NULL || top != -1) {
-        // Reach the leftmost node of the current node.
-        while (current != NULL) {
-            stack[++top] = current; // Push current node to stack.
-            current = current->left; // Move to left child.
+    if (current->right) {
+        next = current->right;
+        while (next->left) {
+            next = next->left;
         }
-
-        // Current must be NULL at this point, so we pop the top node from the stack.
-        current = stack[top--]; // Current is now the leftmost node.
-
-        // Save the next node in the iterator before returning the data.
-        SetNode *nextNode = current->right != NULL ? current->right : NULL;
-
-        // If the stack is not empty or the current node has a right child,
-        // set the iterator's next node to the next node in in-order traversal.
-        if (top != -1 || nextNode != NULL) {
-            iter->node = nextNode;
-        } else {
-            // If the stack is empty and there is no right child,
-            // we have reached the end of the traversal.
-            iter->node = NULL;
+    } 
+    else {
+        while (current->parent && current == current->parent->right) {
+            current = current->parent;
         }
-
-        // Return the data of the current node.
-        return current->data;
+        next = current->parent;
     }
-
-    // If we reach here, there are no more elements in the set.
-    return NULL;
+    iter->node = next; 
+    return next;
 }
 
 /*
