@@ -1,313 +1,279 @@
+#include "common.h"
 #include "../include/set.h"
 #include "../include/printing.h"
 #include <stdlib.h>
 #include <stdio.h>
 
 typedef struct setnode SetNode;
-struct setnode {
-    void *data;
-    SetNode *left;
-    SetNode *right;
-    SetNode *parent;
+struct setnode
+{
+    SetNode *next;
+    SetNode *prev;
+    void *elem;
 };
 
-struct set {
-    SetNode *root;
+struct set
+{
+    SetNode *head;
+    SetNode *tail;
     int size;
     cmpfunc_t cmp;
 };
 
-struct set_iter {
+struct set_iter
+{
     SetNode *node;
-    set_t *set;
 };
 
-static SetNode *setnode_create(void *data) {
-    SetNode *node = malloc(sizeof(SetNode));
-    node->data = data;
-    node->left = NULL;
-    node->right = NULL;
-    node->parent = NULL;
+static SetNode *node_create(void *elem)
+{
+    SetNode *node = (SetNode *)malloc(sizeof(SetNode));
+    if (node == NULL)
+    {
+        goto error;
+    }
+
+    node->next = NULL;
+    node->prev = NULL;
+    node->elem = elem;
     return node;
+
+error:
+    return NULL;
+
 }
 
-static void setnode_destroy(SetNode *node) {
-    if (node) {
-        setnode_destroy(node->left);
-        setnode_destroy(node->right);
-        //free(node->data);
-        free(node);
+set_t *set_create(cmpfunc_t cmpfunc)
+{
+    set_t *set = malloc(sizeof(set_t));
+    if (set == NULL)
+    {
+        goto error;
     }
-}
 
-static void setnode_copy(set_t *set, SetNode *node) {
-    if (node) {
-        set_add(set, node->data);    
-        setnode_copy(set, node->left);
-        setnode_copy(set, node->right);  
-    }
-}
-
-static void traverse_union(set_t *unionset, SetNode *node) {
-    if (node) {
-        set_add(unionset, node->data);
-        traverse_union(unionset, node->left);
-        traverse_union(unionset, node->right);  
-    }
-}
-
-static void traverse_intersect(set_t *intersectionset, set_t *set, SetNode *node) {
-    if (node) {
-        if (set_contains(set, node->data)) {
-            set_add(intersectionset, node->data);
-        }   
-        traverse_intersect(intersectionset, set, node->left);
-        traverse_intersect(intersectionset, set, node->right);  
-    }
-}
-
-static void traverse_difference(set_t *differenceset, set_t *set, SetNode *node) {
-    if (node) {
-        if (!set_contains(set, node->data)) {
-            set_add(differenceset, node->data);
-        }
-        traverse_difference(differenceset, set, node->left);
-        traverse_difference(differenceset, set, node->right); 
-    }
-}
-
-
-// Create a new set
-set_t *set_create(cmpfunc_t cmpfunc) {
-    set_t *set = (set_t *)malloc(sizeof(set_t));
-    if (!set) {
-        return NULL;
-    }
-    set->root = NULL;
+    set->head = NULL;
+    set->tail = NULL;
     set->size = 0;
     set->cmp = cmpfunc;
     return set;
+
+error:
+    return NULL;
 }
 
-// Destroy a set
-void set_destroy(set_t *set) {
-    if (set) {
-        setnode_destroy(set->root);
-        free(set);
+void set_destroy(set_t *set)
+{
+    SetNode *node = set->head;
+    while (node != NULL)
+    {
+        SetNode *tmp = node;
+        node = node->next;
+        free(tmp);
     }
+    free(set);
 }
 
-// Insert an element into the set sorted
-void set_add(set_t *set, void *data) {
-    if (set == NULL) {
-        ERROR_PRINT("An error occured");
-        return;}
-
-    SetNode *tmp = setnode_create(data);
-    if (tmp == NULL) {
-        ERROR_PRINT("An error occured");
-        return;}
-
-    if (set->root == NULL) {
-        set->root = tmp;
-        set->size++;
-        return;
-    }
-
-    SetNode *current = set->root;
-    SetNode *parent = NULL;
-
-    while (current != NULL) {
-        parent = current;
-        if (set->cmp(current->data, tmp->data) < 0 ) {
-            current = current->right;
-        }
-        else if (set->cmp(current->data, tmp->data) > 0) {
-            current = current->left;
-        }
-        else {
-            break;
-        }
-    } 
-    if (set->cmp(parent->data, tmp->data) < 0) {
-        parent->right = tmp;
-        tmp->parent = parent;
-        set->size++;
-    } 
-    else if (set->cmp(parent->data, tmp->data) > 0) {
-        parent->left = tmp;
-        tmp->parent = parent;
-        set->size++;
-    }
-}
-
-int set_size(set_t *set) {
+int set_size(set_t *set)
+{
     return set->size;
 }
 
-/*
- * Returns 1 if the given element is contained in
- * the given set, 0 otherwise.
- */
-int set_contains(set_t *set, void *elem) {
-    SetNode *current = set->root;
-
-    while (current != NULL) {
-        if (set->cmp(current->data, elem) < 0 ) {
-            current = current->right;
-        }
-        else if (set->cmp(current->data, elem) > 0) {
-            current = current->left;
-        }
-        else {
-            return 1;
-        }
+static int set_addfirst(set_t *set, void *elem)
+{
+    SetNode *node = node_create(elem);
+    if (node == NULL)
+    {
+        return -1;
     }
+
+    if (set->head == NULL)
+    {
+        set->head = set->tail = node;
+    }
+    else
+    {
+        set->head->prev = node;
+        node->next = set->head;
+        set->head = node;
+    }
+    set->size++;
     return 0;
 }
 
-/*
- * Returns the union of the two given sets; the returned
- * set contains all elements that are contained in either
- * a or b.
- */
+static int set_addlast(set_t *set, void *elem)
+{
+    SetNode *node = node_create(elem);
+    if (node == NULL)
+    {
+        return -1;
+    }
+
+    if (set->head == NULL)
+    {
+        set->head = set->tail = node;
+    }
+    else
+    {
+        set->tail->next = node;
+        node->prev = set->tail;
+        set->tail = node;
+    }
+    set->size++;
+    return 0;
+}
+
+void set_add(set_t *set, void *elem)
+{
+    SetNode *iter = set->head;
+
+    if (iter == NULL)
+    {
+        set_addfirst(set, elem);
+    }
+    else if (set->cmp(elem, set->head->elem) <= 0)
+    {
+        set_addfirst(set, elem);
+    }
+    else if (set->cmp(elem, set->tail->elem) > 0)
+    {
+        set_addlast(set, elem);
+    }
+    else
+    {
+        while (iter->next != NULL)
+        {
+            if (set->cmp(elem, iter->next->elem) <= 0)
+            {
+                break;
+            }
+            iter = iter->next;
+        }
+        SetNode *node = node_create(elem);
+        node->next = iter->next;
+        iter->next->prev = node;
+        iter->next = node;
+        node->prev = iter;
+        set->size++;
+    }
+
+    return;
+}
+
+int set_contains(set_t *set, void *elem) {
+    SetNode *node = set->head;
+    while (node != NULL) {
+        if (set->cmp(elem, node->elem) == 0) {
+            return 1; // Element found
+        }
+        node = node->next;
+    }
+    return 0; // Element not found
+}
+
 set_t *set_union(set_t *a, set_t *b) {
-    set_t *unionset = set_create(a->cmp);
-    traverse_union(unionset, a->root);
-    traverse_union(unionset, b->root);
-    return unionset;
+    set_t *result = set_create(a->cmp);
+
+    SetNode *node = a->head;
+    while (node != NULL) {
+        set_add(result, node->elem);
+        node = node->next;
+    }
+
+    node = b->head;
+    while (node != NULL) {
+        if (!set_contains(result, node->elem)) {
+            set_add(result, node->elem);
+        }
+        node = node->next;
+    }
+
+    return result;
 }
 
-/*
- * Returns the intersection of the two given sets; the
- * returned set contains all elements that are contained
- * in both a and b.
- */
 set_t *set_intersection(set_t *a, set_t *b) {
-    set_t *intersectionset = set_create(a->cmp);
-    SetNode *current = a->root;
-    traverse_intersect(intersectionset, b, current);
-    return intersectionset;
+    set_t *result = set_create(a->cmp);
+
+    SetNode *node = a->head;
+    while (node != NULL) {
+        if (set_contains(b, node->elem)) {
+            set_add(result, node->elem);
+        }
+        node = node->next;
+    }
+
+    return result;
 }
 
-/*
- * Returns the set difference of the two given sets; the
- * returned set contains all elements that are contained
- * in a and not in b.
- */
 set_t *set_difference(set_t *a, set_t *b) {
-    set_t *differenceset = set_create(a->cmp);
-    traverse_difference(differenceset, b, a->root);
-    return differenceset;
+    set_t *result = set_create(a->cmp);
+
+    SetNode *node = a->head;
+    while (node != NULL) {
+        if (!set_contains(b, node->elem)) {
+            set_add(result, node->elem);
+        }
+        node = node->next;
+    }
+
+    return result;
 }
 
-/*
- * Returns a copy of the given set.
- */
 set_t *set_copy(set_t *set) {
-    set_t *newset = set_create(set->cmp);
-    setnode_copy(newset, set->root);
-    return newset;
+    set_t *result = set_create(set->cmp);
+
+    SetNode *node = set->head;
+    while (node != NULL) {
+        set_add(result, node->elem);
+        node = node->next;
+    }
+
+    return result;
+}
+
+set_iter_t *set_createiter(set_t *set)
+{
+    set_iter_t *iter = (set_iter_t *)malloc(sizeof(set_iter_t));
+    if (iter == NULL)
+    {
+        goto error;
+    }
+
+    iter->node = set->head;
+    return iter;
+
+error:
+    return NULL;
+
 }
 
 
-/*
- * Creates a new set iterator for iterating over the given set.
- */
-set_iter_t *set_createiter(set_t *set) {
-    set_iter_t *it = (set_iter_t *)malloc(sizeof(set_iter_t));
-    SetNode *current = set->root;
-    while (current && current->left) {
-        current = current->left;}
-    SetNode *tmp = setnode_create(NULL);
-    tmp->parent = current;
-    it->node = tmp;
-    it->set = set;
-    return it;
-}   
-
-/*
- * Destroys the given set iterator.
- */
-void set_destroyiter(set_iter_t *iter) {
+void set_destroyiter(set_iter_t *iter)
+{
     free(iter);
 }
 
-/*
- * Returns 0 if the given set iterator has reached the end of the
- * set, or 1 otherwise.
- */
-int set_hasnext(set_iter_t *iter) {
-    if (!iter) {
+int set_hasnext(set_iter_t *iter)
+{
+    if (iter->node == NULL)
+    {
         return 0;
     }
-    if (!set_size(iter->set)) {
-        return 0;
+    else
+    {
+        return 1;
     }
-    SetNode *temp = iter->set->root;
-    while (temp && temp->right) {
-        temp = temp->right;
-    }
-    if (iter->node == temp) {
-        return 0;}
-    return 1;
 }
 
-/*
- * Returns the next element in the sequence represented by the given
- * set iterator.
- */
-void *set_next(set_iter_t *iter) {
-    if (!iter->node) {
+void *set_next(set_iter_t *iter)
+{
+    if (iter->node == NULL)
+    {
         return NULL;
     }
-    SetNode *current = iter->node;
-    SetNode *next = NULL;
-
-    if (current->right) {
-        next = current->right;
-        while (next->left) {
-            next = next->left;
-        }
-    } 
-    else {
-        while (current->parent && current == current->parent->right) {
-            current = current->parent;
-        }
-        next = current->parent;
+    else
+    {
+        void *elem = iter->node->elem;
+        iter->node = iter->node->next;
+        return elem;
     }
-    iter->node = next; 
-    return next->data;
 }
-
-/*
-static int compare_words(void *a, void *b)
-{
-    return strcasecmp(a, b);
-}
-
-int main(){
-    set_t *test_set = set_create(compare_words);
-    char a[] = "a";
-    char aa[] = "aa";
-    char b[] = "b";
-    char c[] = "c";
-    char d[] = "d";
-    char e[] = "e";
-    char f[] = "f";
-    char g[] = "g";
-    set_add(test_set, b);
-    set_add(test_set, a);
-    //set_add(test_set, aa);
-    //printf("%s\n", test_set->root->data);
-    //printf("%d\n", compare_words(b, a));
-    set_add(test_set, b);
-    set_add(test_set, c);
-    set_add(test_set, d);
-    set_add(test_set, c);
-    set_t *copy = set_copy(test_set);
-    //printf("%s\n", test_set->root->data);
-    //printf("%s\n", copy->root->data);
-}
-
-*/
