@@ -119,22 +119,22 @@ void set_add(set_t *set, void *data) {
 
     while (current != NULL) {
         parent = current;
-        if (set->cmp(current->data, tmp->data) > 0 ) {
+        if (set->cmp(current->data, tmp->data) < 0 ) {
             current = current->right;
         }
-        else if (set->cmp(current->data, tmp->data) < 0) {
+        else if (set->cmp(current->data, tmp->data) > 0) {
             current = current->left;
         }
         else {
             break;
         }
     } 
-    if (set->cmp(parent->data, tmp->data) > 0) {
+    if (set->cmp(parent->data, tmp->data) < 0) {
         parent->right = tmp;
         tmp->parent = parent;
         set->size++;
     } 
-    else if (set->cmp(parent->data, tmp->data) < 0) {
+    else if (set->cmp(parent->data, tmp->data) > 0) {
         parent->left = tmp;
         tmp->parent = parent;
         set->size++;
@@ -153,10 +153,10 @@ int set_contains(set_t *set, void *elem) {
     SetNode *current = set->root;
 
     while (current != NULL) {
-        if (set->cmp(current->data, elem) > 0 ) {
+        if (set->cmp(current->data, elem) < 0 ) {
             current = current->right;
         }
-        else if (set->cmp(current->data, elem) < 0) {
+        else if (set->cmp(current->data, elem) > 0) {
             current = current->left;
         }
         else {
@@ -236,7 +236,11 @@ void set_destroyiter(set_iter_t *iter) {
  * set, or 1 otherwise.
  */
 int set_hasnext(set_iter_t *iter) {
-    if (iter->node == iter->set->root) {
+    SetNode *temp = iter->set->root;
+    while (temp->right) {
+        temp = temp->right;
+    }
+    if (iter->node == temp) {
         return 0;}
     return 1;
 }
