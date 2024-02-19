@@ -241,6 +241,9 @@ int set_hasnext(set_iter_t *iter) {
     if (!iter) {
         return 0;
     }
+    if (!set_size(iter->set)) {
+        return 0;
+    }
     SetNode *temp = iter->set->root;
     while (temp && temp->right) {
         temp = temp->right;
@@ -256,9 +259,6 @@ int set_hasnext(set_iter_t *iter) {
  */
 void *set_next(set_iter_t *iter) {
     if (!iter->node) {
-        return NULL;
-    }
-    if (!iter->set->size) {
         return NULL;
     }
     SetNode *current = iter->node;
